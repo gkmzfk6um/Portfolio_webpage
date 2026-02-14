@@ -1,0 +1,14 @@
+# Ignore build artifacts
+.sitemap.xml
+.*.html
+
+# Ignore dependencies
+node_modules/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
