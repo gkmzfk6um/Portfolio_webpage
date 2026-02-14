@@ -1,6 +1,8 @@
 # Ignore build artifacts
-.sitemap.xml
-.*.html
+sitemap.xml
+gallery-*.html
+contact.html
+home.html
 
 # Ignore dependencies
 node_modules/
@@ -12,3 +14,5 @@ Thumbs.db
 # Ignore IDE files
 .vscode/
 .idea/
+/sitemap.xml
+/robots.txt

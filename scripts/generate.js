@@ -5,7 +5,7 @@ const contentPath = path.join(__dirname, '../content.json');
 const rawData = fs.readFileSync(contentPath);
 const data = JSON.parse(rawData);
 
-const BASE_URL = process.env.BASE_URL || 'https://example.com';
+const BASE_URL = data.baseUrl || process.env.BASE_URL || 'https://example.com';
 const DT = new Date().toISOString().split('T')[0];
 
 const outputDir = path.join(__dirname, '../');
@@ -19,69 +19,48 @@ function generateHtml(title, bodyContent, redirectHash) {
     <meta name="description" content="Portfolio content: ${title}">
     <script>
         // Redirect humans to the dynamic SPA
-        // Bots will index this content, users will be redirected
-        window.location.replace('./#${redirectHash}');
+        if (window.location.protocol !== 'file:') {
+            window.location.replace('./#${redirectHash}');
+        }
     </script>
     <noscript>
         <style>body { visibility: visible; }</style>
     </noscript>
 </head>
 <body>
-    <header>
-        <h1>${data.pageName || 'My Portfolio'}</h1>
-        <nav>
-            <ul>
-                <li><a href="./.home.html">Home</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
     <main>
+        <h1>${data.pageName || 'My Portfolio'}</h1>
         ${bodyContent}
     </main>
-    <footer>
-        <p>&copy; ${new Date().getFullYear()} ${data.pageName}</p>
-    </footer>
 </body>
 </html>`;
 }
 
 const sitemapUrls = [];
 
-// 1. Generate Home (.home.html)
+// 1. Generate Home (home.html) - Optional fallback
 let homeContent = '';
 if (data.hero) {
     homeContent += `
-        <section id="hero">
+        <section>
             <h2>${data.hero.title}</h2>
             <p>${data.hero.subtitle}</p>
         </section>
     `;
 }
-homeContent += `<section id="galleries"><h2>Galleries</h2><ul>`;
+homeContent += `<section><h2>Galleries</h2><ul>`;
 if (data.galleries) {
     Object.keys(data.galleries).forEach(key => {
-        homeContent += `<li><a href="./.gallery-${key}.html">${key.replace(/-/g, ' ')}</a></li>`;
+        homeContent += `<li><a href="./gallery-${key}.html">${key.replace(/-/g, ' ')}</a></li>`;
     });
 }
 homeContent += `</ul></section>`;
 
-if (data.contact) {
-    homeContent += `
-        <section id="contact">
-            <h2>Contact</h2>
-            <p>${data.contact.name}</p>
-            <p><a href="mailto:${data.contact.email}">${data.contact.email}</a></p>
-        </section>
-    `;
-}
+fs.writeFileSync(path.join(outputDir, 'home.html'), generateHtml(data.pageName, homeContent, 'home'));
+console.log('Generated home.html');
+sitemapUrls.push(`${BASE_URL}/home.html`);
 
-fs.writeFileSync(path.join(outputDir, '.home.html'), generateHtml(data.pageName, homeContent, 'home'));
-console.log('Generated .home.html');
-sitemapUrls.push(`${BASE_URL}/.home.html`);
-
-
-// 2. Generate Gallery Pages (.gallery-[slug].html)
+// 2. Generate Gallery Pages (gallery-[slug].html)
 if (data.galleries) {
     Object.entries(data.galleries).forEach(([key, gallery]) => {
         let content = `
@@ -99,14 +78,32 @@ if (data.galleries) {
         });
         content += `</div></article>`;
 
-        const filename = `.gallery-${key}.html`;
+        const filename = `gallery-${key}.html`;
         fs.writeFileSync(path.join(outputDir, filename), generateHtml(`${key} - ${data.pageName}`, content, `gallery/${key}`));
         console.log(`Generated ${filename}`);
         sitemapUrls.push(`${BASE_URL}/${filename}`);
     });
 }
 
-// 3. Generate Sitemap
+// 3. Generate Contact (contact.html)
+if (data.contact) {
+    let contactContent = `
+        <section>
+            <h2>Contact</h2>
+            <p>${data.contact.name}</p>
+            <p><a href="mailto:${data.contact.email}">${data.contact.email}</a></p>
+    `;
+    if (data.contact.phone) {
+        contactContent += `<p><a href="tel:${data.contact.phone}">${data.contact.phone}</a></p>`;
+    }
+    contactContent += `</section>`;
+
+    fs.writeFileSync(path.join(outputDir, 'contact.html'), generateHtml(`Contact - ${data.pageName}`, contactContent, 'contact'));
+    console.log('Generated contact.html');
+    sitemapUrls.push(`${BASE_URL}/contact.html`);
+}
+
+// 4. Generate Sitemap
 let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
    <url>
@@ -127,5 +124,13 @@ sitemapUrls.forEach(url => {
 
 sitemap += `</urlset>`;
 
-fs.writeFileSync(path.join(outputDir, '.sitemap.xml'), sitemap);
-console.log('Generated .sitemap.xml');
+fs.writeFileSync(path.join(outputDir, 'sitemap.xml'), sitemap);
+console.log('Generated sitemap.xml');
+
+// 5. Generate robots.txt
+const robots = `User-agent: *
+Allow: /
+Sitemap: ${BASE_URL}/sitemap.xml`;
+
+fs.writeFileSync(path.join(outputDir, 'robots.txt'), robots);
+console.log('Generated robots.txt');
