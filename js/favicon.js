@@ -3,6 +3,19 @@
  * Provides both static SVG for SEO and dynamic animations for users
  */
 
+// Helper: read CSS custom properties with fallbacks
+function getCSSVar(name, fallback) {
+    if (typeof window === 'undefined' || !window.getComputedStyle) return fallback;
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return v ? v.trim() || fallback : fallback;
+}
+
+const COLORS = {
+    accent: getCSSVar('--accent', '#5f738a'),
+    accentHover: getCSSVar('--accent-hover', '#758aa3'),
+    textPrimary: getCSSVar('--text-primary', '#eef1f4')
+};
+
 const Favicon = {
     // Static fallback for search engines
     staticFavicon: {
@@ -10,9 +23,9 @@ const Favicon = {
             const svg = `<svg width="32" height="32" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="spiralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#ff6b6b"/>
-                        <stop offset="50%" stop-color="#4ecdc4"/>
-                        <stop offset="100%" stop-color="#45b7d1"/>
+                        <stop offset="0%" stop-color="${COLORS.accent}"/>
+                        <stop offset="50%" stop-color="${COLORS.accentHover}"/>
+                        <stop offset="100%" stop-color="${COLORS.textPrimary}"/>
                     </linearGradient>
                 </defs>
                 <path d="M16,4 Q24,8 28,16 Q24,24 16,28 Q8,24 4,16 Q8,8 16,4" 
@@ -32,9 +45,9 @@ const Favicon = {
             const content = `
                 <defs>
                     <linearGradient id="spiralGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#ff6b6b"/>
-                        <stop offset="50%" stop-color="#4ecdc4"/>
-                        <stop offset="100%" stop-color="#45b7d1"/>
+                        <stop offset="0%" stop-color="${COLORS.accent}"/>
+                        <stop offset="50%" stop-color="${COLORS.accentHover}"/>
+                        <stop offset="100%" stop-color="${COLORS.textPrimary}"/>
                     </linearGradient>
                 </defs>
                 <g transform="rotate(${rotation} 16 16)">
@@ -49,7 +62,7 @@ const Favicon = {
         pulse: function (time) {
             const scale = 0.8 + 0.2 * Math.sin(time / 100);
             const content = `
-                <circle cx="16" cy="16" r="${12 * scale}" fill="#007bff"/>
+                <circle cx="16" cy="16" r="${12 * scale}" fill="${COLORS.accent}"/>
                 <circle cx="16" cy="16" r="${6 * scale}" fill="white" opacity="0.3"/>
             `;
 
